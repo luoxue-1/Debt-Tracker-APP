@@ -1,0 +1,20 @@
+name: debt_tracker
+description: A simple debt tracking app
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  flutter_slidable: ^3.1.0
+  intl: ^0.18.0
+  path_provider: ^2.1.0
+  file_picker: ^8.0.0
+
+
+flutter:
+  uses-material-design: true
