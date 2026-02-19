@@ -32,7 +32,12 @@ class _AddEditDebtScreenState extends State<AddEditDebtScreen> {
       _dateController = TextEditingController(text: widget.debt!.date);
       _noteController = TextEditingController(text: widget.debt!.note ?? '');
       _isLender = widget.debt!.isLender;
-      _status = widget.debt!.status;
+      // 确保状态有效，如果不是有效的状态值，设置为待还
+      if (widget.debt!.status != '待还' && widget.debt!.status != '已还') {
+        _status = '待还';
+      } else {
+        _status = widget.debt!.status;
+      }
     } else {
       _nameController = TextEditingController();
       _amountController = TextEditingController();

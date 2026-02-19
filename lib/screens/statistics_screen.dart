@@ -140,69 +140,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 总览卡片（只显示总借出、总还款、待收款）
-              const Text('总览', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              GridView.count(
-                crossAxisCount: 1,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('总借出', style: TextStyle(fontSize: 14)),
-                          const SizedBox(height: 6),
-                          Text('¥${_totalLent.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
-                          const SizedBox(height: 3),
-                          const Text('所有用户的借出之和', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('总还款', style: TextStyle(fontSize: 14)),
-                          const SizedBox(height: 6),
-                          Text('¥${_totalBorrowed.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
-                          const SizedBox(height: 3),
-                          const Text('所有用户的还款之和', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('待收款', style: TextStyle(fontSize: 14)),
-                          const SizedBox(height: 6),
-                          Text('¥${_totalToReceive.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _totalToReceive > 0 ? Colors.red : Colors.green)),
-                          const SizedBox(height: 3),
-                          const Text('总借出与总还款之差', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
               // 按月汇总（添加月份选择器）
-              const SizedBox(height: 32),
               const Text('按月汇总', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               
@@ -231,6 +169,68 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ),
               
               _buildMonthlySummary(),
+              
+              // 总览卡片（以待收款、总欠款、总收款的顺序排列）
+              const SizedBox(height: 24),
+              const Text('总览', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              GridView.count(
+                crossAxisCount: 1,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  Card(
+                    elevation: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('待收款', style: TextStyle(fontSize: 12)),
+                          const SizedBox(height: 4),
+                          Text('¥${_totalToReceive.toStringAsFixed(2)}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _totalToReceive > 0 ? Colors.red : Colors.green)),
+                          const SizedBox(height: 2),
+                          const Text('总借出与总还款之差', style: TextStyle(fontSize: 8, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Card(
+                    elevation: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('总欠款', style: TextStyle(fontSize: 12)),
+                          const SizedBox(height: 4),
+                          Text('¥${_totalLent.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue)),
+                          const SizedBox(height: 2),
+                          const Text('所有用户的借出之和', style: TextStyle(fontSize: 8, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Card(
+                    elevation: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('总收款', style: TextStyle(fontSize: 12)),
+                          const SizedBox(height: 4),
+                          Text('¥${_totalBorrowed.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green)),
+                          const SizedBox(height: 2),
+                          const Text('所有用户的还款之和', style: TextStyle(fontSize: 8, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

@@ -87,8 +87,12 @@ class _HomeScreenState extends State<HomeScreen> {
       } else if (_sortBy == '金额') {
         debts.sort((a, b) => b.amount.compareTo(a.amount));
       } else if (_sortBy == '状态') {
-        Map<String, int> statusOrder = {'逾期': 0, '待还': 1, '已还': 2};
-        debts.sort((a, b) => statusOrder[a.status]!.compareTo(statusOrder[b.status]!));
+        Map<String, int> statusOrder = {'待还': 0, '已还': 1};
+        debts.sort((a, b) {
+          int aOrder = statusOrder[a.status] ?? 2; // 未知状态排在最后
+          int bOrder = statusOrder[b.status] ?? 2;
+          return aOrder.compareTo(bOrder);
+        });
       }
       
       setState(() {
@@ -356,7 +360,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     const PopupMenuItem(value: '全部', child: Text('全部')),
                     const PopupMenuItem(value: '待还', child: Text('待还')),
                     const PopupMenuItem(value: '已还', child: Text('已还')),
-                    const PopupMenuItem(value: '逾期', child: Text('逾期')),
                   ],
                   icon: const Icon(Icons.filter_list),
                 ),

@@ -8,8 +8,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 
-// 仅在web平台导入html
-import 'dart:html' as html if (dart.library.io) '';
+// 条件导入dart:html，仅在web平台可用
+import 'dart:html' as html if (dart.library.io) 'dart:io';
 
 class ProfileScreen extends StatefulWidget {
   final Function(ThemeMode)? onThemeChanged;
@@ -46,26 +46,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
       
       // 在Web环境中使用下载
       if (kIsWeb) {
-        // 创建Blob并下载
-        final blob = html.Blob([jsonData], 'application/json');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.document.createElement('a') as html.AnchorElement
-          ..href = url
-          ..download = fileName
-          ..style.display = 'none';
-        html.document.body?.append(anchor);
-        anchor.click();
-        anchor.remove();
-        html.Url.revokeObjectUrl(url);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('数据已导出为: $fileName')),
-        );
+        // 对于Web平台，使用dart:html来实现文件下载
+        try {
+          // 创建Blob对象
+          final blob = html.Blob([jsonData], 'application/json');
+          // 创建下载链接
+          final url = html.Url.createObjectUrlFromBlob(blob);
+          // 创建<a>标签
+          final anchor = html.document.createElement('a') as html.AnchorElement
+            ..href = url
+            ..download = fileName
+            ..style.display = 'none';
+          // 添加到文档并点击
+          html.document.body?.append(anchor);
+          anchor.click();
+          // 清理
+          anchor.remove();
+          html.Url.revokeObjectUrl(url);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('数据已导出为: $fileName')),
+          );
+        } catch (webError) {
+          print('Web平台导出失败: $webError');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Web平台导出失败，请重试')),
+          );
+        }
       } else {
         // 在移动设备上保存到文件系统
-        Directory? directory = await getExternalStorageDirectory();
-        if (directory == null) {
-          directory = await getApplicationDocumentsDirectory();
+        String? selectedDirectory;
+        try {
+          // 尝试让用户选择文件夹
+          selectedDirectory = await FilePicker.platform.getDirectoryPath(
+            dialogTitle: '选择保存位置',
+          );
+        } catch (e) {
+          print('选择文件夹失败: $e');
+        }
+        
+        Directory directory;
+        if (selectedDirectory != null) {
+          // 用户选择了文件夹
+          directory = Directory(selectedDirectory);
+        } else {
+          // 用户未选择文件夹，使用默认位置
+          Directory? extDir = await getExternalStorageDirectory();
+          if (extDir != null) {
+            directory = extDir;
+          } else {
+            directory = await getApplicationDocumentsDirectory();
+          }
         }
         
         String filePath = '${directory.path}/$fileName';
@@ -131,7 +162,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // 解析JSON
                   List<dynamic> debtsList = jsonDecode(jsonData);
                   List<DebtModel> debts = debtsList.map((item) {
-                    return DebtModel.fromMap(item);
+                    DebtModel debt = DebtModel.fromMap(item);
+                    // 处理逾期状态，转换为待还
+                    if (debt.status == '逾期') {
+                      debt.status = '待还';
+                    }
+                    // 确保状态有效，如果为空或不是有效的状态值，设置为待还
+                    if (debt.status == null || debt.status.isEmpty || (debt.status != '待还' && debt.status != '已还')) {
+                      debt.status = '待还';
+                    }
+                    return debt;
                   }).toList();
                   
                   // 清空现有数据
@@ -264,12 +304,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       });
                     },
                   ),
-                ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.notifications),
-                  title: const Text('逾期提醒'),
-                  trailing: const Switch(value: true, onChanged: null),
                 ),
                 const Divider(),
                 ListTile(

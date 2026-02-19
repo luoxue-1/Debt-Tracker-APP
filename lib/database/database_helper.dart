@@ -1,23 +1,89 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import '../models/debt_model.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
   
   // 使用内存Map模拟数据库
-  final List<DebtModel> _debts = [];
+  List<DebtModel> _debts = [];
   int _nextId = 1;
+  File? _dataFile;
 
   DatabaseHelper._privateConstructor() {
-    print('初始化内存数据库');
+    print('初始化数据库');
+    _initDatabase();
+  }
+
+  // 初始化数据库，加载数据文件
+  Future<void> _initDatabase() async {
+    try {
+      _dataFile = await _getDataFile();
+      if (_dataFile!.existsSync()) {
+        String jsonData = await _dataFile!.readAsString();
+        List<dynamic> debtsList = jsonDecode(jsonData);
+        _debts = debtsList.map((item) => DebtModel.fromMap(item)).toList();
+        // 计算下一个ID
+        if (_debts.isNotEmpty) {
+          _nextId = _debts.map((debt) => debt.id!).reduce((a, b) => a > b ? a : b) + 1;
+        }
+        print('数据加载成功，共 ${_debts.length} 条记录');
+      } else {
+        print('数据文件不存在，创建新的数据库');
+        _debts = [];
+        _nextId = 1;
+        await _saveData();
+      }
+    } catch (e) {
+      print('初始化数据库失败: $e');
+      _debts = [];
+      _nextId = 1;
+    }
+  }
+
+  // 获取数据文件路径
+  Future<File> _getDataFile() async {
+    Directory directory = await getApplicationDocumentsDirectory();
+    String filePath = '${directory.path}/debt_tracker_data.json';
+    return File(filePath);
+  }
+
+  // 保存数据到文件
+  Future<void> _saveData() async {
+    try {
+      if (_dataFile == null) {
+        _dataFile = await _getDataFile();
+      }
+      List<Map<String, dynamic>> debtsMap = _debts.map((debt) => debt.toMap()).toList();
+      String jsonData = jsonEncode(debtsMap);
+      await _dataFile!.writeAsString(jsonData);
+      print('数据保存成功，共 ${_debts.length} 条记录');
+    } catch (e) {
+      print('保存数据失败: $e');
+    }
   }
 
   Future<int> insertDebt(DebtModel debt) async {
     try {
       print('插入欠款记录');
-      // 为新记录分配ID
+      // 为新记录分配ID，如果已有ID则保留
+      int id;
+      if (debt.id != null) {
+        // 保留原始ID
+        id = debt.id!;
+        // 确保_nextId大于所有现有ID
+        if (id >= _nextId) {
+          _nextId = id + 1;
+        }
+      } else {
+        // 为新记录分配新ID
+        id = _nextId++;
+      }
+      
       final newDebt = DebtModel(
-        id: _nextId++,
+        id: id,
         name: debt.name,
         amount: debt.amount,
         date: debt.date,
@@ -28,6 +94,7 @@ class DatabaseHelper {
         isLender: debt.isLender,
       );
       _debts.add(newDebt);
+      await _saveData();
       print('插入成功，ID: ${newDebt.id}');
       print('当前记录数: ${_debts.length}');
       return newDebt.id!;
@@ -48,6 +115,7 @@ class DatabaseHelper {
       int index = _debts.indexWhere((d) => d.id == debt.id);
       if (index != -1) {
         _debts[index] = debt;
+        await _saveData();
         print('更新成功');
         return 1;
       } else {
@@ -65,6 +133,7 @@ class DatabaseHelper {
       print('删除欠款记录，ID: $id');
       int initialLength = _debts.length;
       _debts.removeWhere((d) => d.id == id);
+      await _saveData();
       int deletedCount = initialLength - _debts.length;
       print('删除成功，删除了 $deletedCount 条记录');
       return deletedCount;
@@ -145,6 +214,7 @@ class DatabaseHelper {
       print('清空所有欠款记录');
       _debts.clear();
       _nextId = 1;
+      await _saveData();
       print('清空成功，当前记录数: ${_debts.length}');
     } catch (e) {
       print('清空欠款记录失败: $e');
